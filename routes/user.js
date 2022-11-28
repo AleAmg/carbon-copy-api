@@ -1,4 +1,5 @@
 require("dotenv").config();
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const router = express.Router();
@@ -28,7 +29,7 @@ router.get("/", validateToken, (req, res) => {
       res.send(products);
     })
     .catch((err) => {
-      res.send(err)
+      res.send(err);
     });
 });
 
@@ -42,40 +43,61 @@ router.get("/:mail", (req, res) => {
     });
 });
 
-router.post("/", (req, res) => {
+router.post("/singin", async (req, res) => {
+  const { name, password, mail } = req.body;
+
+  const haveUser = await User.findOne({ mail });
+  console.log(haveUser);
+
+  const saltRounds = 10;
+
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
   const user = {
-    name: req.body.name,
-    password: req.body.password,
-    mail: req.body.mail,
+    name,
+    passwordHash,
+    mail,
   };
-  console.log(user);
-
-  const haveUser = User.findOne({ mail: req.body.mail });
-
   if (!haveUser) {
     User.create(user)
       .then((user) => {
-        res.send(user);
+        res.status(201).send(user);
       })
       .catch((err) => console.log(err));
   } else {
-    res.status(500).json({
-      message: "Err",
+    res.status(500).send({
+      message: "This email have acount",
     });
   }
 });
 
-router.post("/auth", (req, res) => {
-  const { name, password } = req.body;
+router.post("/login", async (req, res) => {
+  const { password, mail } = req.body;
+  console.log(mail);
 
-  const user = { username: name };
+  const haveUser = await User.findOne({ mail });
 
-  const accessToken = generateAccesToken(user);
+  console.log(haveUser);
 
-  res.header("authorization", accessToken).json({
-    message: "User autenticado",
-    token: accessToken,
-  });
+  const passswordCorrect =
+    haveUser === null
+      ? false
+      : await bcrypt.compare(password, haveUser.passwordHash);
+
+  if (!(haveUser && passswordCorrect)) {
+    res.status(500).send({
+      message: "invalid user or password",
+    });
+  } else {
+    const user = { mail, id: haveUser._id, name: haveUser.name };
+
+    const accessToken = generateAccesToken(user);
+
+    res.header("authorization", accessToken).send({
+      message: "User autenticado",
+      token: accessToken,
+    });
+  }
 });
 
 module.exports = router;

@@ -7,7 +7,7 @@ mongoose
   .connect(conecctionString, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    bufferCommands: false,
+    
   })
   .then(() => {
     console.log("Database connected with MongoDB");

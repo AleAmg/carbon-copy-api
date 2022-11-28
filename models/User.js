@@ -10,14 +10,21 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     require: true,
   },
-  password: {
+  passwordHash: {
     type: String,
     require: true,
   },
 });
 
-UserSchema.requiredPaths()
-UserSchema.path('mail').index({ unique: true });
+UserSchema.set("toJSON", {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id;
+    delete returnedObject._id;
+    delete returnedObject.__v;
+
+    delete returnedObject.passwordHash 
+  },
+});
 
 const User = mongoose.model("User", UserSchema);
 
