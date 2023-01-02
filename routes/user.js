@@ -14,7 +14,8 @@ const validateToken = (req, res, next) => {
   if (!accessToken) {
     res.send("Access denied");
   }
-  jwt.verify(accessToken, process.env.SECRET, (err, user) => {
+  const bearedToken = accessToken.split(" ")[1]
+  jwt.verify(bearedToken, process.env.SECRET, (err, user) => {
     if (err) {
       res.send("Access denied, token expired o incorrect");
     } else {
@@ -65,7 +66,7 @@ router.post("/singin", async (req, res) => {
       })
       .catch((err) => console.log(err));
   } else {
-    res.status(500).send({
+    res.status(500).json({
       message: "This email have acount",
     });
   }
@@ -73,11 +74,8 @@ router.post("/singin", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   const { password, mail } = req.body;
-  console.log(mail);
 
   const haveUser = await User.findOne({ mail });
-
-  console.log(haveUser);
 
   const passswordCorrect =
     haveUser === null
@@ -96,6 +94,7 @@ router.post("/login", async (req, res) => {
     res.header("authorization", accessToken).send({
       message: "User autenticado",
       token: accessToken,
+      name: user.name,
     });
   }
 });
